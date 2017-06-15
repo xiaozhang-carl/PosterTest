@@ -7,7 +7,6 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
-import android.graphics.Rect;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
@@ -25,14 +24,14 @@ public class EraserImage extends View {
 
     private Context context;
     //画笔
-    private Paint paint;
+    private Paint mEraserPaint;
     //路径
-    private Path path;
+    private Path mEraserpath;
     //路径的点
-    private float mX;
-    private float mY;
+    private float mEraserX;
+    private float mEraserY;
     //临时画布
-    private Canvas can;
+    private Canvas mEraserCanvas;
     //临时画布中的背景图片
     private Bitmap bitmap_temp;
 
@@ -62,60 +61,31 @@ public class EraserImage extends View {
 
         this.context = context;
         getScreenSize();
-        paint = new Paint();
-        paint.setAlpha(0);
+        mEraserPaint = new Paint();
+        mEraserPaint.setAlpha(0);
         //设置画笔的痕迹是透明的，从而可以看到背景图片
-        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
-        paint.setAntiAlias(true);
+        mEraserPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
+        mEraserPaint.setAntiAlias(true);
 
-        paint.setDither(true);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeJoin(Paint.Join.ROUND);
-        paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setStrokeWidth(36);
+        mEraserPaint.setDither(true);
+        mEraserPaint.setStyle(Paint.Style.STROKE);
+        mEraserPaint.setStrokeJoin(Paint.Join.ROUND);
+        mEraserPaint.setStrokeCap(Paint.Cap.ROUND);
+        mEraserPaint.setStrokeWidth(36);
 
-        path = new Path();
+        mEraserpath = new Path();
         //创建临时透明背景图片
         bitmap_temp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         //创建临时画布
-        can = new Canvas();
+        mEraserCanvas = new Canvas();
         //将画到临时画布上的对象都画到临时图片上
-        can.setBitmap(bitmap_temp);
+        mEraserCanvas.setBitmap(bitmap_temp);
         //将要擦除的图片缩放至全屏的大小
         //将要擦除的图片画到临时图片上
-        can.drawBitmap(getScaledBitmap(bitmap), 0, 0, null);
-    }
-
-    //得到原图的矩形
-    public Rect getSrcRect(Bitmap bitmap) {
-        return bitmap == null ? null : new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
+        mEraserCanvas.drawBitmap(getScaledBitmap(bitmap), 0, 0, null);
     }
 
 
-    public Rect getDstRect(Bitmap bitmap) {
-        if (bitmap == null) {
-            return null;
-        }
-        int i;
-        int i2;
-        int i3;
-        int width = bitmap.getWidth();
-        int height = bitmap.getHeight();
-        if (width < screenWidthPixels) {
-            i = (screenWidthPixels - width) / 2;
-            i2 = (screenHeightPixels - height) / 2;
-            i3 = i + width;
-            width += i2;
-        } else {
-            float k = (((float) screenWidthPixels) * 1.0f) / ((float) width);
-            i = 0;
-            i2 = ((int) (((float) screenHeightPixels) - (((float) height) * k))) / 2;
-            i3 = screenWidthPixels;
-            width = ((int) (((float) height) * k)) + i2;
-        }
-        Rect mRect = new Rect(i, i2, i3, width);
-        return mRect;
-    }
 
     public void getScreenSize() {
         WindowManager windowManager = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
@@ -144,7 +114,7 @@ public class EraserImage extends View {
         //将画布上的临时图片显示在屏幕上
         canvas.drawBitmap(bitmap_temp, 0, 0, null);
         //将path画在临时图片上
-        can.drawPath(path, paint);
+        mEraserCanvas.drawPath(mEraserpath, mEraserPaint);
     }
 
 
@@ -170,24 +140,24 @@ public class EraserImage extends View {
 
 
     public void touchDown(float f, float g) {
-        path.reset();
-        path.moveTo(f, g);
-        mX = f;
-        mY = g;
+        mEraserpath.reset();
+        mEraserpath.moveTo(f, g);
+        mEraserX = f;
+        mEraserY = g;
     }
 
     public void touchMove(float f, float g) {
-        float dx = Math.abs(f - mX);
-        float dy = Math.abs(g - mY);
+        float dx = Math.abs(f - mEraserX);
+        float dy = Math.abs(g - mEraserY);
         if (dx >= 4 || dy >= 4) {
-            path.quadTo(mX, mY, (f + mX) / 2, (g + mY) / 2);
-            mX = f;
-            mY = g;
+            mEraserpath.quadTo(mEraserX, mEraserY, (f + mEraserX) / 2, (g + mEraserY) / 2);
+            mEraserX = f;
+            mEraserY = g;
         }
     }
 
     public void touchUp(float f, float g) {
-        path.lineTo(f, g);
+        mEraserpath.lineTo(f, g);
     }
 
 }
